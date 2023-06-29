@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"sync"
 )
 
 // User struct
@@ -43,33 +45,47 @@ type User struct {
 	UpdatedAt         string `json:"updated_at"`
 }
 
-func getUserInfo(username string, userChan chan User) {
+func worker(username string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	// fmt.Printf("+%v\n", getUserInfo(username))
+	fptr, err := os.Create(fmt.Sprint(username + ".txt"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	jsonBytes, err := json.Marshal(fmt.Sprint(getUserInfo(username)))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	var user User
+	_, err = fptr.Write(jsonBytes)
+
+}
+
+func getUserInfo(username string) (user User) {
+
+	fmt.Println(username)
 	res, err := http.Get(fmt.Sprintf("https://api.github.com/users/" + username))
 	if err != nil {
 
 		log.Fatal(err)
 	}
+
 	err = json.NewDecoder(res.Body).Decode(&user)
 	if err != nil {
 		log.Fatal(err)
 	}
-	userChan <- user
+	// userChan <- user
+	return
 
 }
 
 func main() {
 	usernames := []string{"nishantasarma", "gauravssnl"}
-	var userInfo User
-	userChan := make(chan User)
+	var wg sync.WaitGroup
+
 	for _, username := range usernames {
-		go getUserInfo(username, userChan)
-		userInfo = <-userChan
-		fmt.Println(userInfo)
-
+		wg.Add(1)
+		go worker(username, &wg)
 	}
-
-	close(userChan)
-
+	wg.Wait()
 }
