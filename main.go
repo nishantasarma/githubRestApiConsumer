@@ -26,13 +26,13 @@ type User struct {
 	EventsURL         string `json:"events_url"`
 	ReceivedEventsURL string `json:"received_events_url"`
 	Type              string `json:"type"`
-	SiteAdmin         string `json:"site_admin"`
+	SiteAdmin         bool   `json:"site_admin"`
 	Name              string `json:"name"`
 	Company           string `json:"company"`
 	Blog              string `json:"blog"`
 	Location          string `json:"location"`
 	Email             string `json:"email"`
-	Hireable          string `json:"hireable"`
+	Hireable          bool   `json:"hireable"`
 	Bio               string `json:"bio"`
 	TwitterUsername   string `json:"twitter_username"`
 	PublicRepos       int    `json:"public_repos"`
@@ -49,13 +49,11 @@ func getUserInfo(username string, userChan chan User) {
 	res, err := http.Get(fmt.Sprintf("https://api.github.com/users/" + username))
 	if err != nil {
 
-		log.Fatal("err")
+		log.Fatal(err)
 	}
-	json.NewDecoder(res.Body).Decode(&user)
+	err = json.NewDecoder(res.Body).Decode(&user)
 	if err != nil {
-
-		log.Fatal("err")
-
+		log.Fatal(err)
 	}
 	userChan <- user
 
